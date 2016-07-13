@@ -1,6 +1,8 @@
 #+TITLE: Asynchronous HTTP Client - Clojure - Changelog
 #+SETUPFILE: setup.org
 
+* Release 1.2.0
+** Update async-http-client dependency from com.ning 1.9.31 to org.asynchttpclient 2.0.10
 * Release 1.1.0
 ** Fix issue #69
 ** Add support for asynchronous close

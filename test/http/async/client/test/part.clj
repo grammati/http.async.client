@@ -18,9 +18,9 @@
   (:require [clojure.test :refer :all]
             [http.async.client.part :refer :all])
   (:import (java.nio.charset Charset)
-           (com.ning.http.client.multipart ByteArrayPart
-                                           FilePart
-                                           StringPart)
+           (org.asynchttpclient.request.body.multipart ByteArrayPart
+                                                       FilePart
+                                                       StringPart)
            (java.io File)))
 
 (set! *warn-on-reflection* true)

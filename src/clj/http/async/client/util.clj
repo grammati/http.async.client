@@ -15,16 +15,10 @@
 (ns http.async.client.util
   "Asynchronous HTTP Client - Clojure - Utils"
   {:author "Hubert Iwaniuk"}
-  (:import (com.ning.http.client ProxyServer
-                                 ProxyServer$Protocol
-                                 Realm$AuthScheme
-                                 Realm$RealmBuilder)))
-
-(defn- proto-map [proto]
-  (if proto
-    ({:http  ProxyServer$Protocol/HTTP
-      :https ProxyServer$Protocol/HTTPS} proto)
-    ProxyServer$Protocol/HTTP))
+  (:import (org.asynchttpclient.proxy ProxyServer
+                                      ProxyServer$Builder)
+           (org.asynchttpclient Realm$AuthScheme
+                                Realm$Builder)))
 
 (defn set-proxy
   "Sets proxy on builder.
@@ -36,9 +30,10 @@
          host port
          (or (and (nil? user) (nil? password))
              (and user password))]}
-  (.setProxyServer b (if user
-                       (ProxyServer. (proto-map protocol) host port user password)
-                       (ProxyServer. (proto-map protocol) host port))))
+  (let [psb (ProxyServer$Builder. host port)]
+    (when user
+      (.setRealm psb (Realm$Builder. user password)))
+    (.setProxyServer b (.build psb))))
 
 (defn- type->auth-scheme [type]
   (or ({:basic Realm$AuthScheme/BASIC
@@ -51,23 +46,20 @@
   via the proxy."
   [{:keys [type user password realm preemptive target-proxy]
     :or {:type :basic}} b]
-  (let [rbld (Realm$RealmBuilder.)]
+  (when (nil? user)
+    (if (nil? password)
+      (throw (IllegalArgumentException. "For authentication user and password is required"))
+      (throw (IllegalArgumentException. "For authentication user is required"))))
+  (when (nil? password)
+    (throw (IllegalArgumentException. "For authentication password is required")))
+  (when (and (= :digest type) (nil? realm))
+    (throw (IllegalArgumentException. "For DIGEST authentication realm is required")))
+  (let [rbld (Realm$Builder. user password)]
     (.setScheme rbld (type->auth-scheme type))
-    (when (nil? user)
-      (if (nil? password)
-        (throw (IllegalArgumentException. "For authentication user and password is required"))
-        (throw (IllegalArgumentException. "For authentication user is required"))))
-    (when (nil? password)
-      (throw (IllegalArgumentException. "For authentication password is required")))
     (when (= :digest type)
-      (when (nil? realm) (throw (IllegalArgumentException.
-                                 "For DIGEST authentication realm is required")))
       (.setRealmName rbld realm))
     (when-not (nil? preemptive)
       (.setUsePreemptiveAuth rbld preemptive))
     (when-not (nil? target-proxy)
       (.setTargetProxy rbld target-proxy))
-    (doto rbld
-      (.setPrincipal user)
-      (.setPassword password))
     (.setRealm b (.build rbld))))

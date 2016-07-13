@@ -16,12 +16,13 @@
 
 (ns http.async.client.headers "Asynchrounous HTTP Client - Clojure - Lazy headers"
     {:author "Hubert Iwaniuk"}
-    (:import (com.ning.http.client HttpResponseHeaders FluentCaseInsensitiveStringsMap)))
+    (:import (org.asynchttpclient HttpResponseHeaders)
+             (io.netty.handler.codec.http HttpHeaders)))
 
 (defn- kn [k]
   (if (keyword? k) (name k) k))
 
-(defn- v [#^FluentCaseInsensitiveStringsMap h k]
+(defn- v [#^HttpHeaders h k]
   (let [vals (.get h (kn k))]
     (if (= 1 (count vals))
       (first vals)

@@ -27,7 +27,7 @@
             [manifold.stream :as stream]
             [clojure.java.io :refer [input-stream]])
   (:import (java.net URI)
-           (com.ning.http.client AsyncHttpClient)
+           (org.asynchttpclient AsyncHttpClient)
            (org.apache.log4j ConsoleAppender Level Logger PatternLayout)
            (org.eclipse.jetty.server Server Request)
            (org.eclipse.jetty.server.handler AbstractHandler)
@@ -592,7 +592,7 @@
   (testing "only host and port"
     (let [r (prepare-request :get "http://not-important/" :proxy {:host "localhost"
                                                                   :port 8080})]
-      (is (isa? (class r) com.ning.http.client.Request))))
+      (is (isa? (class r) org.asynchttpclient.Request))))
   (testing "wrong protocol"
     (is (thrown-with-msg? AssertionError #"Assert failed:.*protocol.*"
                           (prepare-request :get "http://not-important/" :proxy {:protocol :wrong
@@ -602,12 +602,12 @@
     (let [r (prepare-request :get "http://not-important/" :proxy {:protocol :http
                                                                   :host "localhost"
                                                                   :port 8080})]
-      (is (isa? (class r) com.ning.http.client.Request))))
+      (is (isa? (class r) org.asynchttpclient.Request))))
   (testing "https protocol"
     (let [r (prepare-request :get "http://not-important/" :proxy {:protocol :https
                                                                   :host "localhost"
                                                                   :port 8383})]
-      (is (isa? (class r) com.ning.http.client.Request))))
+      (is (isa? (class r) org.asynchttpclient.Request))))
   (testing "protocol but no host nor port"
     (is (thrown-with-msg? AssertionError #"Assert failed: host"
                           (prepare-request :get "http://not-important/" :proxy {:protocol :http}))))
@@ -626,14 +626,14 @@
                                                                   :port 8080
                                                                   :user "name"
                                                                   :password "..."})]
-      (is (isa? (class r) com.ning.http.client.Request))))
+      (is (isa? (class r) org.asynchttpclient.Request))))
   (testing "protocol, host, port, user and password"
     (let [r (prepare-request :get "http://not-important/" :proxy {:protocol :http
                                                                   :host "localhost"
                                                                   :port 8080
                                                                   :user "name"
                                                                   :password "..."})]
-      (is (isa? (class r) com.ning.http.client.Request)))))
+      (is (isa? (class r) org.asynchttpclient.Request)))))
 
 (deftest get-with-cookie
   (let [cv "sample-value"

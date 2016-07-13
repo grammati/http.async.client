@@ -19,15 +19,14 @@
   {:author "Chris Hapgood"}
   (:refer-clojure :exclude [await send])
   (:import (java.io ByteArrayOutputStream)
-           (com.ning.http.client HttpResponseBodyPart)
-           (com.ning.http.client.ws WebSocket
-                                    WebSocketUpgradeHandler$Builder
-                                    WebSocketListener
-                                    WebSocketByteListener WebSocketByteFragmentListener
-                                    WebSocketTextListener WebSocketTextFragmentListener
-                                    WebSocketCloseCodeReasonListener)
-           (com.ning.http.client.providers.netty.ws NettyWebSocket)
-           (com.ning.http.client.providers.netty NettyAsyncHttpProviderConfig)))
+           (org.asynchttpclient HttpResponseBodyPart)
+           (org.asynchttpclient.ws WebSocket
+                                   WebSocketUpgradeHandler$Builder
+                                   WebSocketListener
+                                   WebSocketByteListener WebSocketByteFragmentListener
+                                   WebSocketTextListener WebSocketTextFragmentListener
+                                   WebSocketCloseCodeReasonListener)
+           (org.asynchttpclient.netty.ws NettyWebSocket)))
 
 (defprotocol IWebSocket
   (-sendText [this text])

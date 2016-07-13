@@ -22,14 +22,13 @@
              [part :refer :all]]
             [clojure.string :refer [join]]
             [clojure.tools.logging :as log])
-  (:import (com.ning.http.client AsyncHttpClient AsyncHttpClientConfig$Builder
-                                 AsyncHandler
-                                 FluentCaseInsensitiveStringsMap
-                                 HttpResponseStatus HttpResponseHeaders
-                                 HttpResponseBodyPart
-                                 Request RequestBuilder)
-           (com.ning.http.client.generators InputStreamBodyGenerator)
-           (com.ning.http.client.cookie Cookie)
+  (:import (org.asynchttpclient AsyncHttpClient
+                                AsyncHandler AsyncHandler$State
+                                HttpResponseStatus HttpResponseHeaders
+                                HttpResponseBodyPart
+                                Request RequestBuilder)
+           (org.asynchttpclient.request.body.generator InputStreamBodyGenerator)
+           (org.asynchttpclient.cookie Cookie)
            (java.net URLEncoder)
            (java.io File
                     InputStream
@@ -170,12 +169,12 @@
     (.. rb (setUrl url) (build))))
 
 (defn convert-action
-  "Converts action (:abort, nil) to Async client STATE."
+  "Converts action (:abort, nil) to Async client State."
   [action]
-  {:tag com.ning.http.client.AsyncHandler$STATE}
+  {:tag org.asynchttpclient.AsyncHandler$State}
   (if (= action :abort)
-    com.ning.http.client.AsyncHandler$STATE/ABORT
-    com.ning.http.client.AsyncHandler$STATE/CONTINUE))
+    org.asynchttpclient.AsyncHandler$State/ABORT
+    org.asynchttpclient.AsyncHandler$State/CONTINUE))
 
 (defn execute-request
   "Executes provided request.
@@ -219,21 +218,21 @@
         (.executeRequest
          client req
          (reify AsyncHandler
-           (^{:tag com.ning.http.client.AsyncHandler$STATE}
+           (^{:tag org.asynchttpclient.AsyncHandler$State}
             onStatusReceived [this #^HttpResponseStatus e]
             (let [[result action] ((or status
                                        (:status *default-callbacks*))
                                    resp (convert-status-to-map e))]
               (deliver (:status resp) result)
               (convert-action action)))
-           (^{:tag com.ning.http.client.AsyncHandler$STATE}
+           (^{:tag org.asynchttpclient.AsyncHandler$State}
             onHeadersReceived [this #^HttpResponseHeaders e]
             (let [[result action] ((or headers
                                        (:headers *default-callbacks*))
                                    resp (convert-headers-to-map e))]
               (deliver (:headers resp) result)
               (convert-action action)))
-           (^{:tag com.ning.http.client.AsyncHandler$STATE}
+           (^{:tag org.asynchttpclient.AsyncHandler$State}
             onBodyPartReceived [this #^HttpResponseBodyPart e]
             (let [l (.length e)]
               (when (pos? l)

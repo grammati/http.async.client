@@ -26,10 +26,9 @@
             [clojure.tools.logging :as log])
   (:import (java.io ByteArrayOutputStream)
            (java.util.concurrent LinkedBlockingQueue)
-           (com.ning.http.client AsyncHttpClient AsyncHttpClientConfig$Builder)
-           (com.ning.http.client.ws WebSocket)
-           (com.ning.http.client.providers.netty.ws NettyWebSocket)
-           (com.ning.http.client.providers.netty NettyAsyncHttpProviderConfig)))
+           (org.asynchttpclient AsyncHttpClient DefaultAsyncHttpClient DefaultAsyncHttpClientConfig$Builder)
+           (org.asynchttpclient.ws WebSocket)
+           (org.asynchttpclient.netty.ws NettyWebSocket)))
 
 ;; # Client Lifecycle
 
@@ -78,9 +77,9 @@
              user-agent
              executor-service
              ssl-context]}]
-  (AsyncHttpClient.
+  (DefaultAsyncHttpClient.
    (.build
-    (let [b (AsyncHttpClientConfig$Builder.)]
+    (let [b (DefaultAsyncHttpClientConfig$Builder.)]
       (when-not (nil? compression-enabled) (.setCompressionEnforced b compression-enabled))
       (when connection-timeout (.setConnectTimeout b connection-timeout))
       (when-not (nil? follow-redirects) (.setFollowRedirect b follow-redirects))
