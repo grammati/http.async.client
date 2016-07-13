@@ -19,7 +19,7 @@
 
 (defn convert-status-to-map
   "Convert HTTP Status line to lazy map."
-  [st]
+  [^HttpResponseStatus st]
   (let [lm {:code (delay (.getStatusCode st))
             :msg (delay (.getStatusText st))
             :protocol (delay (.getProtocolText st))

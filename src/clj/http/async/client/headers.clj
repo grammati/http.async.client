@@ -17,48 +17,25 @@
 (ns http.async.client.headers "Asynchrounous HTTP Client - Clojure - Lazy headers"
     {:author "Hubert Iwaniuk"}
     (:import (org.asynchttpclient HttpResponseHeaders)
-             (io.netty.handler.codec.http HttpHeaders)))
+             (io.netty.handler.codec.http HttpHeaders))
+    (:require [clojure.string :as string]))
 
-(defn- kn [k]
-  (if (keyword? k) (name k) k))
+(defn http-headers->map
+  "Converts an instance of HttpHeaders into a map with keyword keys."
+  [^HttpHeaders headers]
+  (reduce (fn [m entry]
+            (let [k (-> entry ^String key string/lower-case keyword)
+                  v (val entry)]
+              (assoc m k (if-let [vals (get m k)]
+                           (conj (if (vector? vals) vals [vals]) v)
+                           v))))
+          nil
+          (.entries headers)))
 
-(defn- v [#^HttpHeaders h k]
-  (let [vals (.get h (kn k))]
-    (if (= 1 (count vals))
-      (first vals)
-      (vec vals))))
-
-;; Convertion of AHC Headers to lazy map.
 (defn convert-headers-to-map
   "Converts Http Response Headers to lazy map."
   [#^HttpResponseHeaders headers]
-  (let [hds (.getHeaders headers)
-        names (.keySet hds)]
-    (proxy [clojure.lang.APersistentMap]
-           []
-      (containsKey [k] (.containsKey hds (kn k)))
-      (entryAt [k] (when (.containsKey hds (kn k))
-                     (proxy [clojure.lang.MapEntry]
-                            [k nil]
-                       (val [] (v hds k)))))
-      (valAt
-        ([k] (v hds k))
-        ([k default] (if (.containsKey hds k)
-                       (v hds k)
-                       default)))
-      (cons [m] (throw (UnsupportedOperationException. "Form 'cons' not supported: headers are read only.")))
-      (count [] (.size hds))
-      (assoc [k v] (throw (UnsupportedOperationException. "Form 'assoc' not supported: headers are read only.")))
-      (without [k] (throw (UnsupportedOperationException. "Form 'without' not supported: headers are read only")))
-      (seq [] ((fn thisfn [plseq]
-                 (lazy-seq
-                  (when-let [pseq (seq plseq)]
-                    (let [k (keyword (.toLowerCase (first pseq)))]
-                      (cons (proxy [clojure.lang.MapEntry]
-                                   [k nil]
-                              (val [] (v hds k)))
-                            (thisfn (rest pseq)))))))
-               names)))))
+  (http-headers->map (.getHeaders headers)))
 
 ;; Creates cookies from headers.
 (defn create-cookies
@@ -69,8 +46,8 @@
                           (if (string? set-cookie) (vector set-cookie) set-cookie))]
       (let [name-token (atom true)]
         (into {}
-              (for [#^String cookie (.split cookie-string ";")]
-                (let [keyval (map (fn [#^String x] (.trim x)) (.split cookie "=" 2))]
+              (for [cookie (string/split cookie-string #";")]
+                (let [keyval (map string/trim (string/split cookie #"=" 2))]
                   (if @name-token
                     (do
                       (compare-and-set! name-token true false)

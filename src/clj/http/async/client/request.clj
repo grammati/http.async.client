@@ -53,7 +53,7 @@
   [{ct :content-type
     :or {ct ""}}]
   (when-let [match (re-matches #".*charset\s*=\s*(.*)\s*" ct)]
-    (.toUpperCase (match 1))))
+    (.toUpperCase ^String (match 1))))
 
 ;; default set of callbacks
 
@@ -70,7 +70,7 @@
   [headers (if-not headers :abort)])
 
 ;; body callbacks
-(defn body-collect [state baos]
+(defn body-collect [state ^java.io.ByteArrayOutputStream baos]
   (let [body (:body state)]
     (if (realized? body)
       (do
@@ -95,7 +95,7 @@
    :completed body-completed
    :error error-collect})
 
-(defn url-encode
+(defn ^String url-encode
   "Taken from Clojure Http Client"
   [arg]
   (if (map? arg)
@@ -149,10 +149,10 @@
     ;; message body
     (cond
       (map? body) (doseq [[k v] body] (.addFormParam rb (name k) (str v)))
-      (string? body) (.setBody rb (.getBytes (if (= "application/x-www-form-urlencoded" (:content-type headers))
-                                               (url-encode body)
-                                               body)
-                                             "UTF-8"))
+      (string? body) (let [^String s (if (= "application/x-www-form-urlencoded" (:content-type headers))
+                                       (url-encode body)
+                                       body)]
+                       (.setBody rb (.getBytes s "UTF-8")))
       (instance? InputStream body) (.setBody rb (InputStreamBodyGenerator. #^InputStream body))
       (instance? File body) (.setBody rb #^File body)
       (vector? body) (doseq [part body]
@@ -201,11 +201,11 @@
   - :done    - promise that is delivered once receiving response has finished
   - :error   - promise that is delivered if requesting resource failed, once delivered
                will contain Throwable."
-  [client #^Request req & {status    :status
-                           headers   :headers
-                           part      :part
-                           completed :completed
-                           error     :error}]
+  [#^AsyncHttpClient client #^Request req & {status    :status
+                                            headers   :headers
+                                            part      :part
+                                            completed :completed
+                                            error     :error}]
   (let [resp {:id      (gensym "req-id__")
               :req req
               :url     (.getUrl req)

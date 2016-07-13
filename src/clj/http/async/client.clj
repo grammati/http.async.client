@@ -25,8 +25,8 @@
              [websocket :as ws]]
             [clojure.tools.logging :as log])
   (:import (java.io ByteArrayOutputStream)
-           (java.util.concurrent LinkedBlockingQueue)
-           (org.asynchttpclient AsyncHttpClient DefaultAsyncHttpClient DefaultAsyncHttpClientConfig$Builder)
+           (java.util.concurrent BlockingQueue LinkedBlockingQueue)
+           (org.asynchttpclient AsyncHttpClient DefaultAsyncHttpClient DefaultAsyncHttpClientConfig$Builder Request)
            (org.asynchttpclient.ws WebSocket)
            (org.asynchttpclient.netty.ws NettyWebSocket)))
 
@@ -76,6 +76,7 @@
              request-timeout
              user-agent
              executor-service
+             thread-factory
              ssl-context]}]
   (DefaultAsyncHttpClient.
    (.build
@@ -84,18 +85,19 @@
       (when connection-timeout (.setConnectTimeout b connection-timeout))
       (when-not (nil? follow-redirects) (.setFollowRedirect b follow-redirects))
       (when idle-in-pool-timeout (.setPooledConnectionIdleTimeout b idle-in-pool-timeout))
-      (when-not (nil? keep-alive) (.setAllowPoolingConnections b keep-alive))
+      (when-not (nil? keep-alive) (.setKeepAlive b keep-alive))
       (when max-conns-per-host (.setMaxConnectionsPerHost b max-conns-per-host))
       (when max-conns-total (.setMaxConnections b max-conns-total))
       (when max-redirects (.setMaxRedirects b max-redirects))
-      (when executor-service (.setExecutorService b executor-service))
+      (when executor-service (throw (IllegalArgumentException. "executor-service parameter is no longer supported. Use thread-factory instead.")))
+      (when thread-factory (.setThreadFactory b thread-factory))
       (when proxy
         (set-proxy proxy b))
       (when auth
         (set-realm auth b))
       (when request-timeout (.setRequestTimeout b request-timeout))
       (.setUserAgent b (if user-agent user-agent *user-agent*))
-      (when-not (nil? ssl-context) (.setSSLContext b ssl-context))
+      (when-not (nil? ssl-context) (.setSslContext b ssl-context))
       b))))
 
 (defmacro ^{:private true} gen-methods [& methods]
@@ -209,15 +211,15 @@
   If body have not yet been delivered and request hasn't failed waits for body."
   [resp]
   (let [b (safe-get :body resp)]
-    (if (instance? LinkedBlockingQueue b)
-      ((fn gen-next []
+    (if (instance? BlockingQueue b)
+      ((fn gen-next [^BlockingQueue b]
          (lazy-seq
           (let [v (.take b)]
             (if (= ::done v)
               (do
                 (.put b ::done)
                 nil)
-              (cons v (gen-next)))))))
+              (cons v (gen-next b)))))) b)
       b)))
 
 (defn- convert [#^ByteArrayOutputStream baos enc]
@@ -292,8 +294,8 @@
 
 (defn uri
   "Get the request URI from the response"
-  [resp]
-  (.toJavaNetURI (.getUri (:req resp))))
+  [{:keys [^Request req] :as resp}]
+  (.toJavaNetURI (.getUri req)))
 
 (defn send
   "Send message via WebSocket."
@@ -307,9 +309,13 @@
 (defn websocket
   "Opens WebSocket connection."
   {:tag WebSocket}
-  [client #^String url & options]
-  (let [wsugh (apply ws/upgrade-handler options)]
-    (.get (.executeRequest client (prepare-request :get url) wsugh))))
+  [^AsyncHttpClient client #^String url & options]
+  (let [wsugh (apply ws/upgrade-handler options)
+        req (prepare-request :get url)]
+    (-> client
+        (.prepareRequest req)
+        (.execute wsugh)
+        .get)))
 
 
 ;; closing
@@ -339,7 +345,7 @@
   a thread and avoid blocking AsyncHttpClient. Does not support
   websocket clients."
   [^AsyncHttpClient client]
-  (.closeAsynchronously client))
+  (future (.close client)))
 
 (defn open?
   "Checks if client is open."

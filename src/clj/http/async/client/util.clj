@@ -17,14 +17,15 @@
   {:author "Hubert Iwaniuk"}
   (:import (org.asynchttpclient.proxy ProxyServer
                                       ProxyServer$Builder)
-           (org.asynchttpclient Realm$AuthScheme
+           (org.asynchttpclient DefaultAsyncHttpClientConfig$Builder
+                                Realm$AuthScheme
                                 Realm$Builder)))
 
 (defn set-proxy
   "Sets proxy on builder.
   Note that in v1.0.0 you must also set a realm to enable HTTPS
   traffic via the proxy."
-  [{:keys [protocol host port user password]} b]
+  [{:keys [protocol host port user password]} ^DefaultAsyncHttpClientConfig$Builder b]
   {:pre [(or (nil? protocol)
              (contains? #{:http :https} protocol))
          host port
@@ -45,7 +46,7 @@
   Note that in v.1.0.0 you must set a realm to enable HTTPS traffic
   via the proxy."
   [{:keys [type user password realm preemptive target-proxy]
-    :or {:type :basic}} b]
+    :or {:type :basic}} ^DefaultAsyncHttpClientConfig$Builder b]
   (when (nil? user)
     (if (nil? password)
       (throw (IllegalArgumentException. "For authentication user and password is required"))
@@ -61,5 +62,6 @@
     (when-not (nil? preemptive)
       (.setUsePreemptiveAuth rbld preemptive))
     (when-not (nil? target-proxy)
-      (.setTargetProxy rbld target-proxy))
+      ;;(.setTargetProxy rbld target-proxy)
+      (throw (IllegalArgumentException. "target-proxy parameter is no longer supported")))
     (.setRealm b (.build rbld))))
