@@ -18,8 +18,7 @@
   "Asynchronous HTTP Client Websocket Extensions- Clojure"
   {:author "Chris Hapgood"}
   (:refer-clojure :exclude [await send])
-  (:import (java.io ByteArrayOutputStream)
-           (org.asynchttpclient HttpResponseBodyPart)
+  (:import (org.asynchttpclient HttpResponseBodyPart)
            (org.asynchttpclient.ws WebSocket
                                    WebSocketUpgradeHandler$Builder
                                    WebSocketListener

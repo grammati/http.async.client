@@ -225,10 +225,7 @@
                      :headers (fn [_ hds]
                                 (deliver headers hds)
                                 [hds :abort]))
-    (is (= (:test-header @headers) "test-value"))
-    (is (thrown? UnsupportedOperationException (.cons ^clojure.lang.APersistentMap @headers '())))
-    (is (thrown? UnsupportedOperationException (assoc ^clojure.lang.APersistentMap @headers :a 1)))
-    (is (thrown? UnsupportedOperationException (.without ^clojure.lang.APersistentMap @headers :a)))))
+    (is (= (:test-header @headers) "test-value"))))
 
 (deftest test-status-and-header-callbacks
   (let [status (promise)
@@ -754,7 +751,9 @@
         (testing "Global preeptive, per request preemptive"
           (is (= 200
                  (:code (status (GET c url :auth (assoc cred :preemptive true)))))))
-        (testing "Global preemptive, per request no preemptive"
+        ;; It seems that AHC no longer works this way - global takes precedence. See:
+        ;; https://github.com/AsyncHttpClient/async-http-client/blob/master/client/src/main/java/org/asynchttpclient/netty/request/NettyRequestSender.java#L173-L180
+        #_(testing "Global preemptive, per request no preemptive"
           (is (= 401
                  (:code (status (GET c url :auth (assoc cred :preemptive false)))))))))))
 
@@ -839,7 +838,7 @@
     (close client)
     (let [resp (GET client "http://localhost:8123/")]
       (is (true? (failed? resp)))
-      (is (instance? IOException (error resp))))))
+      (is (instance? Exception (error resp))))))
 
 (deftest extract-empty-body
   (let [resp (GET *client* "http://localhost:8123/empty")]

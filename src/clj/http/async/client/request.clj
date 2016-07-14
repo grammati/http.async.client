@@ -23,7 +23,7 @@
             [clojure.string :refer [join]]
             [clojure.tools.logging :as log])
   (:import (org.asynchttpclient AsyncHttpClient
-                                AsyncHandler AsyncHandler$State
+                                AsyncHandler
                                 HttpResponseStatus HttpResponseHeaders
                                 HttpResponseBodyPart
                                 Request RequestBuilder)
@@ -32,7 +32,6 @@
            (java.net URLEncoder)
            (java.io File
                     InputStream
-                    ByteArrayInputStream
                     ByteArrayOutputStream)))
 
 (def ^:dynamic *user-agent* "http.async.client")
@@ -160,7 +159,7 @@
                        ;; needed to create body part
                        (.addBodyPart rb (create-part part))))
     (when auth
-      (set-realm auth rb))
+      (.setRealm rb (build-realm auth)))
     (when proxy
       (set-proxy proxy rb))
     ;; request timeout

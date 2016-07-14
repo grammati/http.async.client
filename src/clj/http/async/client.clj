@@ -94,10 +94,11 @@
       (when proxy
         (set-proxy proxy b))
       (when auth
-        (set-realm auth b))
+        (.setRealm b (build-realm auth)))
       (when request-timeout (.setRequestTimeout b request-timeout))
       (.setUserAgent b (if user-agent user-agent *user-agent*))
-      (when-not (nil? ssl-context) (.setSslContext b ssl-context))
+      (when-not (nil? ssl-context)
+        (set-ssl-context ssl-context b))
       b))))
 
 (defmacro ^{:private true} gen-methods [& methods]

@@ -87,12 +87,15 @@
                               :certificate-alias other-cert-alias
                               :trust-managers [(BlindTrustManager.)]))))
 
-(deftest test-client
-  (let [ctx (ssl-context :keystore-file ks-file
-                         :keystore-password password
-                         :certificate-file cert-file
-                         :certificate-alias other-cert-alias)]
-    (with-open [client (create-client :ssl-context ctx)]
-      (is (= AsyncHttpClient (class client)))
-      ;; Make sure client is using the SSLContext we supplied
-      (is (= ctx (.getSSLContext (.getConfig client)))))))
+;; NOTE: The client no longer (as of v2.0) exposes its config after creation, so
+;; this test doesn't work :(
+;;
+;; (deftest test-client
+;;   (let [ctx (ssl-context :keystore-file ks-file
+;;                          :keystore-password password
+;;                          :certificate-file cert-file
+;;                          :certificate-alias other-cert-alias)]
+;;     (with-open [client (create-client :ssl-context ctx)]
+;;       (is (= AsyncHttpClient (class client)))
+;;       ;; Make sure client is using the SSLContext we supplied
+;;       (is (= ctx (.getSSLContext (.getConfig client)))))))

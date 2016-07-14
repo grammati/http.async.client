@@ -24,13 +24,11 @@
            (javax.net.ssl
             KeyManagerFactory
             SSLContext
-            HttpsURLConnection
             X509TrustManager)
            (java.io
             File
             InputStream
             FileInputStream
-            InputStreamReader
             FileNotFoundException))
   (:require [clojure.java.io :as io]))
 
